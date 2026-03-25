@@ -1,0 +1,10 @@
+datasets
+normal_train
+diff_results
+baseline
+__pycache__
+.vscode
+train_checkpoints
+failed_data
+sucessful_data
+docker

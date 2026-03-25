@@ -12,7 +12,7 @@ class EvaluatorTCN:
 
     # ------------------------------------------------------------------ VALIDATION ---------------------------------------------------------------
     def evaluate(self, args, obs_perc, actions_dict):
-        eval_percentages = [0.1, 0.2, 0.3, 0.5]
+        eval_percentages = [0.1, 0.2, 0.3, 0.4, 0.5]
         test_num_samples = args.test_num_samples
 
         with torch.no_grad():

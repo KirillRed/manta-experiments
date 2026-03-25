@@ -25,6 +25,12 @@ parser.add_argument('--model_dir')
 parser.add_argument('--results_dir')
 parser.add_argument('--load_type', default='numpy')
 
+parser.add_argument('--no-bimamba', dest='bimamba', action='store_false')
+parser.set_defaults(bimamba=True)
+
+parser.add_argument('--qualitative', dest='qualitative', action='store_true')
+parser.set_defaults(qualitative=False)
+
 # run params
 parser.add_argument('--debug', action='store_true')
 parser.add_argument('--num_workers', type=int, default=16)
@@ -82,7 +88,7 @@ print("*-----------------------------*")
 for arg in ["model", "layer_type", "bz", "num_stages", 
             "kernel_size", "num_layers", 
             "lr", "ds", "sample_rate", "use_features",
-            "channel_dropout_prob", "split"]:
+            "channel_dropout_prob", "split", "num_diff_timesteps", "model_dim"]:
     print("   ", arg, " = ", str(getattr(args, arg)))
     arguments += arg + " = " + str(getattr(args, arg)) + ", "
 print("*-----------------------------*")
@@ -155,7 +161,10 @@ if args.ds in ['bf']:
 
 # Data loaders
 pred_perc = .5
-eval_obs_perc = [.2, .3]
+if args.qualitative:
+    eval_obs_perc = [.3]
+else:
+    eval_obs_perc = [.3]
 
 if args.ds == 'assembly':
     # training

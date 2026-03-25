@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-OPTS="--model_dir=/home/user/checkpoints/assembly \
-      --results_dir=/home/user/checkpoints/assembly \
-      --gt_path=/home/user/assembly101 \
-      --features_path=/home/user/assembly101 \
+OPTS="--model_dir=/data1/kredensk/anticipation/manta/normal_train/assembly/checkpoints \
+      --results_dir=/data1/kredensk/anticipation/manta/normal_train/assembly/checkpoints \
+      --gt_path=/data1/kredensk/anticipation/manta/normal_train/assembly/gt \
+      --features_path=/data1/kredensk/anticipation/manta/normal_train/assembly/features \
       --use_features \
       --use_inp_ch_dropout \
       --layer_type mamba \

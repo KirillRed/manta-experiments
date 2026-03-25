@@ -195,7 +195,7 @@ class BatchGeneratorAssembly101TCN(Dataset):
             if np.random.random() < .4:
                 obs_percentage = 0.15 + .25 * np.random.random()
         else:
-            assert self.obs_perc in [0.2, 0.3]
+            assert self.obs_perc in [.1, 0.2, 0.3, .4, .5]
 
         pred_percentage = 1. - obs_percentage
         if self.part_obs:

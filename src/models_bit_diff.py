@@ -37,6 +37,7 @@ class BitDiffPredictorTCN(nn.Module):
             args.input_dim + 2 * args.num_classes,  # feat dim + noise dim + self cond dim
             args.num_classes,
             args.channel_dropout_prob,
+            args.bimamba,
             args.use_features,
         )
 
@@ -75,6 +76,7 @@ class DiffMultiStageModel(nn.Module):
         dim,
         num_classes,
         dropout,
+        bimamba,
         use_features=False,
     ):
         super(DiffMultiStageModel, self).__init__()
@@ -86,6 +88,7 @@ class DiffMultiStageModel(nn.Module):
             dim,
             num_classes,
             dropout,
+            bimamba
         )
 
     def forward(self, x, t, stage_masks):
@@ -104,6 +107,7 @@ class DiffSingleStageModel(nn.Module):
         dim,
         num_classes,
         dropout,
+        bimamba
     ):
         super(DiffSingleStageModel, self).__init__()
 
@@ -136,7 +140,8 @@ class DiffSingleStageModel(nn.Module):
                             time_dim,
                             dropout,
                             'sum',
-                            bimamba=True,
+                            bimamba=bimamba,
+                            layer_idx=i,
                         )
                     )
                 )
@@ -173,7 +178,12 @@ class DiffMambaResidualLayer(nn.Module):
         dropout=0.2,
         accum='sum',
         bimamba=True,
+        layer_idx=None
     ):
+        if bimamba:
+            print("BIMAMBA IN USE")
+        else:
+            print("BIMAMBA NOT IN USE")
         super(DiffMambaResidualLayer, self).__init__()
 
         # mamba block
@@ -182,8 +192,7 @@ class DiffMambaResidualLayer(nn.Module):
             d_conv=kernel_size,
             use_fast_path=True,
             bimamba=bimamba,
-            dropout=0.2,
-            accum=accum,
+            layer_idx=layer_idx
         )
         self.drop_path = AffineDropPath(out_channels, drop_prob=dropout)
         self.norm = nn.LayerNorm(out_channels)
@@ -203,7 +212,7 @@ class DiffMambaResidualLayer(nn.Module):
     def forward(self, x, t, mask):
         # 1
         mamba_out = self.norm(x.permute(0, 2, 1)) * mask.permute(0, 2, 1)  # B x T x C
-        mamba_out = self.mamba(mamba_out, mask)  # B x T x C
+        mamba_out = self.mamba(mamba_out)  # B x T x C
         mamba_out = mamba_out.permute(0, 2, 1)  # B x C x T
         mamba_out = self.drop_path(mamba_out) * mask
 

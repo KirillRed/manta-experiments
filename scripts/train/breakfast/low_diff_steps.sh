@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-OPTS="--model_dir=/data1/kredensk/anticipation/manta/normal_train/breakfast/checkpoints \
-      --results_dir=/data1/kredensk/anticipation/manta/normal_train/breakfast/checkpoints \
+OPTS="--model_dir=/data1/kredensk/anticipation/manta/train_checkpoints/low_diff_steps/breakfast/checkpoints \
+      --results_dir=/data1/kredensk/anticipation/manta/train_checkpoints/low_diff_steps/breakfast/checkpoints \
       --mapping_file=/data1/kredensk/anticipation/manta/datasets/breakfast/data/breakfast/mapping.txt \
       --vid_list_file_test=/data1/kredensk/anticipation/manta/datasets/breakfast/data/breakfast/splits/test.split1.bundle \
       --vid_list_file=/data1/kredensk/anticipation/manta/datasets/breakfast/data/breakfast/splits/train.split1.bundle \
@@ -12,7 +12,8 @@ OPTS="--model_dir=/data1/kredensk/anticipation/manta/normal_train/breakfast/chec
       --use_inp_ch_dropout \
       --layer_type mamba \
       --part_obs \
-      --num_diff_timesteps 1000 \
+      --num_diff_timesteps 100 \
+      --num_infr_diff_timesteps 10 \
       --diff_loss_type l2 \
       --diff_obj pred_x0 \
       --action=train \

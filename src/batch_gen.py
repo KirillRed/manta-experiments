@@ -35,7 +35,6 @@ class BatchGeneratorTCN(Dataset):
         file_ptr = open(vid_list_file, "r")
         list_of_vid = file_ptr.read().split("\n")[:-1]
         file_ptr.close()
-
         self.list_of_examples = list()
         for vid in list_of_vid:
             if obs_perc != 0:
@@ -82,7 +81,7 @@ class BatchGeneratorTCN(Dataset):
             if np.random.random() < 0.4:
                 obs_percentage = 0.15 + 0.25 * np.random.random()
         else:
-            assert obs_percentage in [0.2, 0.3]
+            assert obs_percentage in [.1, 0.2, 0.3, .4, .5]
         obs_lim = int(obs_percentage * len(content))
 
 
@@ -124,7 +123,6 @@ class BatchGeneratorTCN(Dataset):
         content = self.label_to_id(content)
         assert len(content) == vid_len
         content_past_future = content_past_future[::self.sample_rate]
-
 
         sample = {
             "features": features_past,

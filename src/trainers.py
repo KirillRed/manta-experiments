@@ -295,6 +295,22 @@ class TrainerTCN:
 
                 mask_past_tensor = sample_batched[5]
 
+                if args.qualitative:
+                    keep_lowdim = (classes_tensor != 11).squeeze()
+                    keep_highdim = (classes_all_tensor != 11).squeeze()
+
+                    features = features[..., keep_lowdim]
+                    classes_tensor = classes_tensor[..., keep_lowdim]
+                    classes_all_tensor = classes_all_tensor[..., keep_highdim]
+                    classes_one_hot_tensor = classes_one_hot_tensor[..., keep_lowdim]
+                    mask_past_tensor = mask_past_tensor[..., keep_lowdim]
+
+                print(features.shape, classes_tensor.shape,
+                    classes_all_tensor.shape, classes_one_hot_tensor.shape,
+                    mask_past_tensor.shape)
+                
+                print(classes_tensor)
+
 
                 # META INFO
                 init_vid_len = sample_batched[-2]
@@ -330,6 +346,10 @@ class TrainerTCN:
 
                 ''' ACCURACIES '''
                 gt_content = classes_all_tensor[0].numpy()
+                
+                if args.qualitative:
+                    init_vid_len = len(classes_all_tensor[0])
+
                 assert len(gt_content) == init_vid_len
 
                 # ACCUM PREDICTIONS
@@ -349,7 +369,10 @@ class TrainerTCN:
                 result_dict[f'gt_{file_names[0]}'] = classes_all_tensor[0].numpy()
                 tcn_fin_predictions = np.stack(tcn_fin_predictions, axis=0)  # N x T'
 
-
+                if args.qualitative:
+                    torch.save(tcn_fin_predictions, "sliced_sample.pt")
+                else:
+                    torch.save(tcn_fin_predictions, "full_sample.pt")
                 # COMPUTE EVAL METRICS
                 past_len = int(obs_perc * init_vid_len)  # observation length
                 for i in range(len(eval_percentages)):
