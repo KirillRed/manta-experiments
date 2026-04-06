@@ -7,6 +7,7 @@ OPTS="--model_dir=/data1/kredensk/anticipation/manta/normal_train/breakfast/chec
       --gt_path=/data1/kredensk/anticipation/manta/datasets/breakfast/data/breakfast/groundTruth/ \
       --features_path=/data1/kredensk/anticipation/manta/datasets/breakfast/data/breakfast/features/ \
       --qualitative \
+      --ignore_action=19 \
       --split=1 \
       --ds=bf \
       --conditioned_x0 \

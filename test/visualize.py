@@ -1,9 +1,20 @@
 import numpy as np
+import argparse
 import torch
 from scipy import signal
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import os
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--action", type=str, default="Forgot to specify the action")
+parser.add_argument("--dataset", type=str, default="breakfast")
+
+args = parser.parse_args()
+
+dataset = "50salads" if args.dataset.startswith("5") else "breakfast"
+print(f"Visualizing using {dataset}")
 
 def load_mappings(mapping_file_path):
     id_to_action = {}
@@ -82,7 +93,7 @@ def visualize_action_ribbons(ribbons_dict, id_to_action, save_path=None):
     ax.set_ylim(0, len(names))
     ax.set_yticks([]) 
     ax.set_xlabel('Time (Frames)', fontsize=14, fontweight='bold')
-    ax.set_title('MANTA Action Prediction Variance (Full vs Spliced (after removing crack_egg))', fontsize=16, fontweight='bold', pad=20)
+    ax.set_title(f'MANTA Action Prediction Variance (Full vs Spliced (after removing {args.action}))', fontsize=16, fontweight='bold', pad=20)
 
     legend_patches = []
     for cls_id in all_unique_classes:
@@ -101,9 +112,13 @@ def visualize_action_ribbons(ribbons_dict, id_to_action, save_path=None):
         plt.show()
 
 if __name__ == "__main__":
-    id_to_action, action_to_id = load_mappings("./datasets/breakfast/data/breakfast/mapping.txt")
+    id_to_action, action_to_id = load_mappings(f"./datasets/breakfast/data/{dataset}/mapping.txt")
+
+    file_path = "/data1/kredensk/anticipation/manta/test/test.bundle"
+    with open(file_path, "r") as file:
+        file_name = file.read().strip()
     
-    gt_array = load_ground_truth_text("./datasets/breakfast/data/breakfast/groundTruth/P13_webcam01_P13_scrambledegg.txt", action_to_id)
+    gt_array = load_ground_truth_text(f"./datasets/breakfast/data/{dataset}/groundTruth/{file_name}", action_to_id)
     
     ctrl_samples = extract_samples("./test/full_sample.pt", sample_indices=[0, 1, 2])
     splice_samples = extract_samples("./test/sliced_sample.pt", sample_indices=[0, 1, 2])

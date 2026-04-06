@@ -16,6 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 seed = 1538574472
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 parser = argparse.ArgumentParser()
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 # paths
@@ -30,6 +31,11 @@ parser.set_defaults(bimamba=True)
 
 parser.add_argument('--qualitative', dest='qualitative', action='store_true')
 parser.set_defaults(qualitative=False)
+
+parser.add_argument("--ignore_action", default=-1, type=int)
+
+parser.add_argument("--load_best", dest='load_best', action='store_true')
+parser.set_defaults(load_best=False)
 
 # run params
 parser.add_argument('--debug', action='store_true')

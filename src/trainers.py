@@ -7,6 +7,8 @@ import numpy as np
 from torch.utils.data import DataLoader
 from einops import rearrange
 from collections import defaultdict
+import re
+import glob
 
 # models
 from models_bit_diff import BitDiffPredictorTCN
@@ -68,9 +70,42 @@ class TrainerTCN:
         optimizer = optim.Adam(params=self.diffusion.parameters(), lr=args.lr)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=.5)
 
+        start_epoch = 0
+        if args.load_best:
+            print("Searching for previous checkpoints...")
+            # Find all directories matching "epoch-*" in save_dir
+            epoch_dirs = glob.glob(os.path.join(save_dir, "epoch-*"))
+            valid_epochs = []
+            
+            for edir in epoch_dirs:
+                if os.path.exists(os.path.join(edir, "checkpoint.pth")):
+                    # Extract the epoch number from the folder name
+                    match = re.search(r'epoch-(\d+)', edir)
+                    if match:
+                        valid_epochs.append((int(match.group(1)), edir))
+            
+            if valid_epochs:
+                # Sort by epoch number and grab the highest one
+                valid_epochs.sort(key=lambda x: x[0])
+                best_epoch, best_dir = valid_epochs[-1]
+                print(f"Found checkpoint! Resuming from epoch {best_epoch} at {best_dir}...")
+                
+                # Load the bundled state dicts
+                checkpoint = torch.load(os.path.join(best_dir, "checkpoint.pth"), map_location=device)
+                self.model.load_state_dict(checkpoint['model_state_dict'])
+                self.diffusion.load_state_dict(checkpoint['diffusion_state_dict'])
+                self.ema_diffusion.load_state_dict(checkpoint['ema_state_dict'])
+                optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+                
+                # Set start epoch to the next epoch so we don't repeat work
+                start_epoch = best_epoch + 1 
+            else:
+                print("No valid checkpoints found. Starting from scratch.")
+
         # TRAIN
         print('Start Training...')
-        for epoch in range(args.num_epochs + 1):
+        for epoch in range(start_epoch, args.num_epochs + 1):
             epoch_loss = 0
             epoch_ce_loss = 0
 
@@ -137,6 +172,21 @@ class TrainerTCN:
             if (epoch) % 5 == 0: 
                 torch.save(self.model.state_dict(), save_dir + "/epoch-" + str(epoch) + ".model")
                 torch.save(self.ema_diffusion.state_dict(), save_dir + "/ema_diff_epoch-" + str(epoch) + ".model")
+
+                epoch_dir = os.path.join(save_dir, f"epoch-{epoch}")
+                os.makedirs(epoch_dir, exist_ok=True)
+
+                checkpoint = {
+                    'epoch': epoch,
+                    'model_state_dict': self.model.state_dict(),
+                    'diffusion_state_dict': self.diffusion.state_dict(),
+                    'ema_state_dict': self.ema_diffusion.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler_state_dict': scheduler.state_dict()
+                }
+                
+                # Save the master checkpoint
+                torch.save(checkpoint, os.path.join(epoch_dir, "checkpoint.pth"))
 
 
     def train_single_batch(self, sample_batched, optimizer, device):
@@ -296,8 +346,8 @@ class TrainerTCN:
                 mask_past_tensor = sample_batched[5]
 
                 if args.qualitative:
-                    keep_lowdim = (classes_tensor != 11).squeeze()
-                    keep_highdim = (classes_all_tensor != 11).squeeze()
+                    keep_lowdim = (classes_tensor != args.ignore_action).squeeze()
+                    keep_highdim = (classes_all_tensor != args.ignore_action).squeeze()
 
                     features = features[..., keep_lowdim]
                     classes_tensor = classes_tensor[..., keep_lowdim]
@@ -305,11 +355,11 @@ class TrainerTCN:
                     classes_one_hot_tensor = classes_one_hot_tensor[..., keep_lowdim]
                     mask_past_tensor = mask_past_tensor[..., keep_lowdim]
 
-                print(features.shape, classes_tensor.shape,
-                    classes_all_tensor.shape, classes_one_hot_tensor.shape,
-                    mask_past_tensor.shape)
-                
-                print(classes_tensor)
+                    print(features.shape, classes_tensor.shape,
+                        classes_all_tensor.shape, classes_one_hot_tensor.shape,
+                        mask_past_tensor.shape)
+                    
+                    print(classes_tensor)
 
 
                 # META INFO
@@ -370,9 +420,9 @@ class TrainerTCN:
                 tcn_fin_predictions = np.stack(tcn_fin_predictions, axis=0)  # N x T'
 
                 if args.qualitative:
-                    torch.save(tcn_fin_predictions, "sliced_sample.pt")
+                    torch.save(tcn_fin_predictions, "test/sliced_sample.pt")
                 else:
-                    torch.save(tcn_fin_predictions, "full_sample.pt")
+                    torch.save(tcn_fin_predictions, "test/full_sample.pt")
                 # COMPUTE EVAL METRICS
                 past_len = int(obs_perc * init_vid_len)  # observation length
                 for i in range(len(eval_percentages)):

@@ -87,7 +87,7 @@ class BatchGeneratorAssembly101TCN(Dataset):
         """
 
         ''' ANNOTATIONS '''
-        annotation_path = os.path.join(self.gt_path, "annotations", "coarse-annotations")
+        annotation_path = self.gt_path
         path_to_csv_file = os.path.join("./datasets/assembly101" , f"{self.mode}.csv")
         assert os.path.exists(path_to_csv_file), "{} file not found".format(path_to_csv_file)
         assert os.path.exists(annotation_path), "{} file not found".format(annotation_path)
@@ -116,7 +116,7 @@ class BatchGeneratorAssembly101TCN(Dataset):
             feature_path = None
             if self._load_type == 'numpy':
                 feature_path = join(self.features_path,
-                                    self.feat_dir, 
+                                    entry['view'],
                                     entry['video_id'],
                                     entry['view'],
                                     "features.npy")
@@ -179,6 +179,7 @@ class BatchGeneratorAssembly101TCN(Dataset):
     def _load_features(self, data_dict):
         if self._load_type == 'numpy':
             features = open_memmap(data_dict['feat_path'], mode='r')  # [D, T]
+            features = features.T
             features = features[:, data_dict['start_frame']:data_dict['end_frame']]  # [D, T]
         return features
 
