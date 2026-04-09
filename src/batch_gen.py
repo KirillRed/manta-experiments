@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+import random
+import copy
 from torch.utils.data import Dataset
 import os
 
@@ -12,6 +14,11 @@ class BatchGeneratorTCN(Dataset):
         print(f"Mode : {mode}")
         print(f"Vid list file : {vid_list_file}")
         print(f"Observation perc : {obs_perc}")
+
+        # Whether we do a shuffling test
+        self.shuffling = args.shuffling
+        self.reverse = args.reverse
+        self.shuffle_full = args.shuffle_full
 
         # Set params
         self.mode = mode
@@ -85,6 +92,76 @@ class BatchGeneratorTCN(Dataset):
         obs_lim = int(obs_percentage * len(content))
 
 
+        if self.shuffling:
+            boundary = len(content) if self.shuffle_full else obs_lim
+            boundary_start = boundary - 1
+
+            if not self.shuffle_full:
+                boundary_label = content[obs_lim - 1]
+                while boundary_start > 0 and content[boundary_start - 1] == boundary_label:
+                    boundary_start -= 1
+
+            print(boundary)
+
+            chunks = []
+            i = 0
+            while i < boundary_start:
+                label = content[i]
+                start_idx = i
+                
+                while i < boundary_start and content[i] == label:
+                    i += 1
+                    
+                end_idx = i
+                chunks.append({
+                    'label': label,
+                    'start': start_idx,
+                    'end': end_idx
+                })
+
+            if len(chunks) == 0:
+                raise Exception("Not enough input actions to shuffle")
+
+            start_chunk_idx = 0
+            if len(chunks) > 0 and chunks[0]['label'] == "SIL":
+                start_chunk_idx = 1 
+
+            shufflable_chunks = chunks[start_chunk_idx:]
+
+            if len(shufflable_chunks) > 0 and shufflable_chunks[-1]['label'] == "SIL":
+                shufflable_chunks = shufflable_chunks[:-1]
+
+            if len(shufflable_chunks) > 1:
+                region_start = shufflable_chunks[0]['start']
+                region_end = shufflable_chunks[-1]['end'] # This naturally equals boundary_start
+
+                if self.reverse:
+                    shufflable_chunks.reverse()
+                else:
+                    unique_seed = hash(file_name) % (2**32) 
+                    local_rng = random.Random(unique_seed)
+            
+                    original_order = list(shufflable_chunks)
+                    max_attempts = 100
+                    
+                    for _ in range(max_attempts):
+                        local_rng.shuffle(shufflable_chunks)
+                        if not any(shufflable_chunks[i] == original_order[i] for i in range(len(shufflable_chunks))):
+                            break 
+
+                new_content_region = []
+                new_features_region_list = []
+
+                for chunk in shufflable_chunks:
+                    new_content_region.extend(content[chunk['start'] : chunk['end']])
+                    new_features_region_list.append(features[:, chunk['start'] : chunk['end']])
+
+                content[region_start : region_end] = new_content_region
+                features[:, region_start : region_end] = np.concatenate(new_features_region_list, axis=1)
+
+        with open("/data1/kredensk/anticipation/manta/test/shuffled_sample.txt", "w") as f:
+            for item in content:
+                f.write(f"{item}\n")
         # Pred limit
         pred_percentage = 1.0 - obs_percentage
         if self.part_obs:

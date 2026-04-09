@@ -354,12 +354,7 @@ class TrainerTCN:
                     classes_all_tensor = classes_all_tensor[..., keep_highdim]
                     classes_one_hot_tensor = classes_one_hot_tensor[..., keep_lowdim]
                     mask_past_tensor = mask_past_tensor[..., keep_lowdim]
-
-                    print(features.shape, classes_tensor.shape,
-                        classes_all_tensor.shape, classes_one_hot_tensor.shape,
-                        mask_past_tensor.shape)
                     
-                    print(classes_tensor)
 
 
                 # META INFO
@@ -421,6 +416,8 @@ class TrainerTCN:
 
                 if args.qualitative:
                     torch.save(tcn_fin_predictions, "test/sliced_sample.pt")
+                elif args.shuffling:
+                    torch.save(tcn_fin_predictions, "test/shuffled_sample.pt")
                 else:
                     torch.save(tcn_fin_predictions, "test/full_sample.pt")
                 # COMPUTE EVAL METRICS
@@ -519,4 +516,4 @@ class TrainerTCN:
         return returned_metrics
 
 
-0
+

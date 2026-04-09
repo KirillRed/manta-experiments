@@ -32,6 +32,15 @@ parser.set_defaults(bimamba=True)
 parser.add_argument('--qualitative', dest='qualitative', action='store_true')
 parser.set_defaults(qualitative=False)
 
+parser.add_argument('--shuffling', dest='shuffling', action='store_true')
+parser.set_defaults(shuffling=False)
+
+parser.add_argument('--shuffle_full', dest='shuffle_full', action='store_true')
+parser.set_defaults(shuffle_full=False)
+
+parser.add_argument('--reverse', dest='reverse', action='store_true')
+parser.set_defaults(reverse=False)
+
 parser.add_argument("--ignore_action", default=-1, type=int)
 
 parser.add_argument("--load_best", dest='load_best', action='store_true')

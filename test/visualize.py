@@ -10,6 +10,9 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--action", type=str, default="Forgot to specify the action")
 parser.add_argument("--dataset", type=str, default="breakfast")
+parser.add_argument("--name", type=str, default="unnamed")
+# type 0 is qualitative, 1 is shuffling
+parser.add_argument("--test_type", type=int, default=0)
 
 args = parser.parse_args()
 
@@ -65,7 +68,7 @@ def extract_samples(file_path, sample_indices=[0, 1, 2], window_size=51):
         
     return extracted_arrays
 
-def visualize_action_ribbons(ribbons_dict, id_to_action, save_path=None):
+def visualize_action_ribbons(ribbons_dict, id_to_action, title, save_path=None):
     names = list(ribbons_dict.keys())
     arrays = list(ribbons_dict.values())
     
@@ -93,7 +96,7 @@ def visualize_action_ribbons(ribbons_dict, id_to_action, save_path=None):
     ax.set_ylim(0, len(names))
     ax.set_yticks([]) 
     ax.set_xlabel('Time (Frames)', fontsize=14, fontweight='bold')
-    ax.set_title(f'MANTA Action Prediction Variance (Full vs Spliced (after removing {args.action}))', fontsize=16, fontweight='bold', pad=20)
+    ax.set_title(title, fontsize=16, fontweight='bold', pad=20)
 
     legend_patches = []
     for cls_id in all_unique_classes:
@@ -120,17 +123,38 @@ if __name__ == "__main__":
     
     gt_array = load_ground_truth_text(f"./datasets/breakfast/data/{dataset}/groundTruth/{file_name}", action_to_id)
     
-    ctrl_samples = extract_samples("./test/full_sample.pt", sample_indices=[0, 1, 2])
-    splice_samples = extract_samples("./test/sliced_sample.pt", sample_indices=[0, 1, 2])
-    
-    my_ribbons = {
-        "Ground Truth": gt_array,
-        "Full Sample 0": ctrl_samples[0],
-        "Full Sample 1": ctrl_samples[1],
-        "Full Sample 2": ctrl_samples[2],
-        "Spliced Sample 0": splice_samples[0],
-        "Spliced Sample 1": splice_samples[1],
-        "Spliced Sample 2": splice_samples[2]
-    }
-    
-    visualize_action_ribbons(my_ribbons, id_to_action, save_path="manta_variance_plot.png")
+    if args.test_type == 0:
+        ctrl_samples = extract_samples("./test/full_sample.pt", sample_indices=[0, 1, 2])
+        splice_samples = extract_samples("./test/sliced_sample.pt", sample_indices=[0, 1, 2])
+        
+        my_ribbons = {
+            "Ground Truth": gt_array,
+            "Full Sample 0": ctrl_samples[0],
+            "Full Sample 1": ctrl_samples[1],
+            "Full Sample 2": ctrl_samples[2],
+            "Spliced Sample 0": splice_samples[0],
+            "Spliced Sample 1": splice_samples[1],
+            "Spliced Sample 2": splice_samples[2]
+        }
+        
+        title = f'MANTA Action Prediction Variance (Full vs Spliced (after removing {args.action}))' 
+
+        visualize_action_ribbons(my_ribbons, id_to_action, title, save_path=f"test/results/{args.name}")
+    else:
+        shuffled_gt = load_ground_truth_text("./test/shuffled_sample.txt", action_to_id)
+        ctrl_samples = extract_samples("./test/full_sample.pt", sample_indices=[0, 1, 2])
+        samples = extract_samples("./test/shuffled_sample.pt", sample_indices=[0, 1, 2])
+        my_ribbons = {
+            "Ground Truth": gt_array,
+            "Original Sample 0": ctrl_samples[0],
+            "Original Sample 1": ctrl_samples[1],
+            "Original Sample 2": ctrl_samples[2],
+            "Shuffled Ground Truth": shuffled_gt,
+            "Shuffled Sample 0": samples[0],
+            "Shuffled Sample 1": samples[1],
+            "Shuffled Sample 2": samples[2]
+        }
+        
+        title = f'MANTA Action Prediction Variance (Original vs Shuffled)' 
+
+        visualize_action_ribbons(my_ribbons, id_to_action, title, save_path=f"test/results/{args.name}.png")
